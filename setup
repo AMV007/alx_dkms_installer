@@ -1,0 +1,95 @@
+#!/bin/bash
+#
+# Original version by Marcel Sackermann 2017-03-06
+# Patched by Markus Blatt on 2018-10-17 to support
+# the patch for kernel version >= 4.18 by phonics
+# from 2018-10-09
+kv=$(uname -r | grep -Po '^[0-9]\.[0-9]+(\.[1-9]+)?')
+IFS='.' read -ra kv_numbers <<< "$kv"
+linux_dir="linux-$kv"
+alx_driver_path="drivers/net/ethernet/atheros/alx"
+dkms_dir="/usr/src/alx-$kv"
+deb_dependencies="git patch dkms"
+
+get_linux_source() {
+  if [ ! -d $linux_dir ]; then
+    
+    echo "Downloading kernel source for $kv by git..."
+    git clone --depth 1 -b "v$kv" git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git "linux-$kv"
+    if [ $? != 0 ]; then
+      echo "git failed to download the source. Check the output for information."
+      exit 1
+    else
+      echo "Done"
+      return 0
+    fi
+  else
+    if [ ! -d $linux_dir/$alx_driver_path ]; then
+      echo "Git refuses clone into an non empty directory but '$linux_dir' exists and does not contain the driver source that should be located at '$linux_dir/$alx_driver_path'. Please delete or move the directory yourself so git may download the source."
+      exit 1
+    fi
+  fi
+}
+
+get_deps() {
+  echo "Checking dependencies..."
+  for i in $deb_dependencies; do
+    which $i > /dev/null
+    if [ $? != 0 ];then
+      if [ -f /etc/debian_version ]; then
+        echo "installing dependencies... ($deb_dependencies)"
+        sudo apt-get install $deb_dependencies
+        if [ $? != 0 ]; then
+          echo "Could not install dependencies. Check the output for information."
+          exit 1
+        fi
+      else
+        echo "Please make sure you have the following dependencies installed: $deb_dependencies"
+        exit 1
+      fi
+    fi
+  done
+  echo "Done"
+  return 0
+}
+
+prepare_src() {
+  echo "Preparing dkms module source..."
+  patch="000-enable-alx-wol.patch"
+  offset=8
+  # newer patch for kernel 4.9 and up
+  if [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 9 ] && [ "${kv_numbers[1]}" -lt 18 ]; then
+    echo "Using 4.9+ patch..."
+    patch="000-enable-alx-wol-4.9.patch"
+    offset=5
+  fi
+  # newer patch for kernel 4.18 and up
+  if [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 18 ] || [ "${kv_numbers[0]}" -ge 5 ]; then
+    echo "Using 4.18+ patch..."
+    patch="000-enable-alx-wol-4.18.patch"
+    offset=6
+  fi
+  sudo mkdir -p $dkms_dir/src &&
+    sed "s|KERNEL_VERSION|$kv|g" dkms.conf | sudo tee $dkms_dir/dkms.conf > /dev/null &&
+    sudo cp $linux_dir/$alx_driver_path/* $dkms_dir/src &&
+    sudo patch -d $dkms_dir/src -V never -r - -t -s -N -p$offset < "$patch" &&
+    echo "Done"
+}
+
+dkms_add() {
+  echo "Adding dkms module"
+  sudo dkms add alx/$kv
+  status=$?
+  if [ $status != 0 ] && [ $status != 3 ]; then
+    echo "something went wrong. Check the output for information."
+  elif [ $status != 0 ]; then
+    if [ $status = 3 ]; then
+      echo "Seems the dkms module is already enabled. Don't worry about that error."
+    fi
+    echo "Done"
+    return 0
+  fi
+}
+
+get_deps && get_linux_source && prepare_src && dkms_add && sudo dkms autoinstall alx/$kv
+
