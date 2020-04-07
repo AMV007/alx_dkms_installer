@@ -62,13 +62,19 @@ prepare_src() {
     echo "Using 4.9+ patch..."
     patch="000-enable-alx-wol-4.9.patch"
     offset=5
-  fi
   # newer patch for kernel 4.18 and up
-  if [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 18 ] || [ "${kv_numbers[0]}" -ge 5 ]; then
+  elif [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 18 ] || [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -lt 3 ]; then
     echo "Using 4.18+ patch..."
     patch="000-enable-alx-wol-4.18.patch"
     offset=6
+  elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 3 ]; then
+    echo "Using 5.4+ patch..."
+    patch="000-enable-alx-wol-5.4.x.patch"
+    offset=6
   fi
+
+  if [ -d "$dkms_dir/src" ]; then sudo rm -Rf $dkms_dir/src; fi
+
   sudo mkdir -p $dkms_dir/src &&
     sed "s|KERNEL_VERSION|$kv|g" dkms.conf | sudo tee $dkms_dir/dkms.conf > /dev/null &&
     sudo cp $linux_dir/$alx_driver_path/* $dkms_dir/src &&
@@ -76,8 +82,15 @@ prepare_src() {
     echo "Done"
 }
 
+dkms_remove(){
+  if dkms status | grep alx ; then
+    echo "uninstalling dkms module"
+    sudo dkms remove alx/$kv --all
+  fi
+}
+
 dkms_add() {
-  echo "Adding dkms module"
+  echo "Adding dkms module alx/$kv"
   sudo dkms add alx/$kv
   status=$?
   if [ $status != 0 ] && [ $status != 3 ]; then
@@ -91,5 +104,9 @@ dkms_add() {
   fi
 }
 
-get_deps && get_linux_source && prepare_src && dkms_add && sudo dkms autoinstall alx/$kv
-
+get_deps && get_linux_source && prepare_src && dkms_remove && dkms_add && sudo dkms autoinstall alx/$kv && sudo update-initramfs -u
+if [ "$?" != "0" ]; then
+  echo "!!! there is some error"
+else
+  echo "all ok, now you may need reboot"
+fi
