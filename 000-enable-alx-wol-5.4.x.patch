@@ -1,5 +1,5 @@
---- a/drivers/net/ethernet/atheros/alx/ethtool.c
-+++ b/drivers/net/ethernet/atheros/alx/ethtool.c
+--- a/ethtool.c
++++ b/ethtool.c
 @@ -310,11 +310,47 @@ static int alx_get_sset_count(struct net_device *netdev, int sset)
  	}
  }
@@ -49,8 +49,8 @@
  	.get_strings	= alx_get_strings,
  	.get_sset_count	= alx_get_sset_count,
 
---- a/drivers/net/ethernet/atheros/alx/hw.c
-+++ b/drivers/net/ethernet/atheros/alx/hw.c
+--- a/hw.c
++++ b/hw.c
 @@ -332,6 +332,16 @@ void alx_set_macaddr(struct alx_hw *hw, const u8 *addr)
  	alx_write_mem32(hw, ALX_STAD1, val);
  }
@@ -235,8 +235,8 @@
  {
  	u16  devs1, devs2;
 
---- a/drivers/net/ethernet/atheros/alx/hw.h
-+++ b/drivers/net/ethernet/atheros/alx/hw.h
+--- a/hw.h
++++ b/hw.h
 @@ -487,6 +487,8 @@ struct alx_hw {
  	u8 flowctrl;
  	u32 adv_cfg;
@@ -269,8 +269,8 @@
  bool alx_get_phy_info(struct alx_hw *hw);
  void alx_update_hw_stats(struct alx_hw *hw);
  
---- a/drivers/net/ethernet/atheros/alx/main.c	2019-12-03 16:51:19.119352509 +0800
-+++ b/drivers/net/ethernet/atheros/alx/main.c"	2019-12-03 16:57:16.477599479 +0800
+--- a/main.c	2019-12-03 16:51:19.119352509 +0800
++++ b/main.c"	2019-12-03 16:57:16.477599479 +0800
 @@ -1069,6 +1069,7 @@
  	alx->dev->max_mtu = ALX_MAX_FRAME_LEN(ALX_MAX_FRAME_SIZE);
  	alx->tx_ringsz = 256;
@@ -280,7 +280,6 @@
  	alx->int_mask = ALX_ISR_MISC;
  	hw->dma_chnl = hw->max_dma_chnl;
 @@ -1343,6 +1344,66 @@
- 	__alx_stop(netdev_priv(netdev));
  	return 0;
  }
  
@@ -419,7 +418,7 @@
 +  err = alx_setup_speed_duplex(hw, hw->adv_cfg, hw->flowctrl);
 +	if (err) {
 +		netif_err(alx, hw, alx->dev,
-+    			drivers/net/ethernet/atheros/alx/				"resume:setup_speed_duplex fail %d\n", err);
++    							"resume:setup_speed_duplex fail %d\n", err);
 +    return -EIO;
 +  }
 +  
