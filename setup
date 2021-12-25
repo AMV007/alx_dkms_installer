@@ -57,20 +57,26 @@ prepare_src() {
   echo "Preparing dkms module source..."
   patch="000-enable-alx-wol.patch"
   offset=8
-  # newer patch for kernel 4.9 and up
-  if [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 9 ] && [ "${kv_numbers[1]}" -lt 18 ]; then
-    echo "Using 4.9+ patch..."
-    patch="000-enable-alx-wol-4.9.patch"
-    offset=5
+  # newer patch for kernel 5.10 and up
+  if [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 10 ]; then
+    echo "Using 5.10 patch..."
+    patch="000-enable-alx-wol-5.10.patch"
+    offset=6
+  # newer patch for kernel 5.4 and up
+  elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 4 ]; then
+    echo "Using 5.4+ patch..."
+    patch="000-enable-alx-wol-5.4.x.patch"
+    offset=6
   # newer patch for kernel 4.18 and up
   elif [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 18 ] || [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -lt 4 ]; then
     echo "Using 4.18+ patch..."
     patch="000-enable-alx-wol-4.18.patch"
     offset=6
-  elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 4 ]; then
-    echo "Using 5.4+ patch..."
-    patch="000-enable-alx-wol-5.4.x.patch"
-    offset=6
+  # newer patch for kernel 4.9 and up
+  elif [ "${kv_numbers[0]}" -ge 4 ] && [ "${kv_numbers[1]}" -ge 9 ] && [ "${kv_numbers[1]}" -lt 18 ]; then
+    echo "Using 4.9+ patch..."
+    patch="000-enable-alx-wol-4.9.patch"
+    offset=5
   fi
 
   if [ -d "$dkms_dir/src" ]; then sudo rm -Rf $dkms_dir/src; fi
@@ -83,9 +89,9 @@ prepare_src() {
 }
 
 dkms_remove(){
-  if dkms status | grep alx ; then
+  if /usr/sbin/dkms status | grep alx ; then
     echo "uninstalling dkms module"
-    sudo dkms remove alx/$kv --all
+    sudo /usr/sbin/dkms remove alx/$kv --all
   fi
 }
 
