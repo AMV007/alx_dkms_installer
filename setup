@@ -58,11 +58,15 @@ prepare_src() {
   patch="000-enable-alx-wol.patch"
   offset=8
   # newer patch for kernel 5.10 and up
-  if [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 10 ]; then
+  if [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 16 ]; then
+    echo "Using 5.16 patch..."
+    patch="000-enable-alx-wol-5.16.patch"
+    offset=6
+  # newer patch for kernel 5.16 and up
+  elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 10 ]; then
     echo "Using 5.10 patch..."
     patch="000-enable-alx-wol-5.10.patch"
     offset=6
-  # newer patch for kernel 5.4 and up
   elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 4 ]; then
     echo "Using 5.4+ patch..."
     patch="000-enable-alx-wol-5.4.x.patch"
