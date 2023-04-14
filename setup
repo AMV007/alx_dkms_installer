@@ -38,7 +38,7 @@ get_deps() {
     if [ $? != 0 ];then
       if [ -f /etc/debian_version ]; then
         echo "installing dependencies... ($deb_dependencies)"
-        sudo apt-get install $deb_dependencies
+        sudo apt-get install $deb_dependencies -y
         if [ $? != 0 ]; then
           echo "Could not install dependencies. Check the output for information."
           exit 1
@@ -57,8 +57,18 @@ prepare_src() {
   echo "Preparing dkms module source..."
   patch="000-enable-alx-wol.patch"
   offset=8
+  # newer patch for kernel 5.16 and up
+  if [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 16 ]; then
+    echo "Using 5.16 patch..."
+    patch="000-enable-alx-wol-5.16.patch"
+    offset=6
+  # newer patch for kernel 5.15
+  if [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 15 ]; then
+    echo "Using 5.16 patch..."
+    patch="000-enable-alx-wol-5.15.patch"
+    offset=6
   # newer patch for kernel 5.10 and up
-  if [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 10 ]; then
+  elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 10 ]; then
     echo "Using 5.10 patch..."
     patch="000-enable-alx-wol-5.10.patch"
     offset=6
