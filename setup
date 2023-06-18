@@ -64,7 +64,7 @@ prepare_src() {
     offset=6
   # newer patch for kernel 5.15
   elif [ "${kv_numbers[0]}" -ge 5 ] && [ "${kv_numbers[1]}" -ge 15 ]; then
-    echo "Using 5.16 patch..."
+    echo "Using 5.15 patch..."
     patch="000-enable-alx-wol-5.15.patch"
     offset=6
   # newer patch for kernel 5.10 and up
