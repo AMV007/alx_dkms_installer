@@ -4,7 +4,7 @@
 # Patched by Markus Blatt on 2018-10-17 to support
 # the patch for kernel version >= 4.18 by phonics
 # from 2018-10-09
-kv=$(uname -r | grep -Po '^[0-9]\.[0-9]+(\.[1-9]+)?')
+kv=$(uname -r | grep -Po '^[0-9]\.[0-9]+(\.[0-9]+)?')
 IFS='.' read -ra kv_numbers <<< "$kv"
 linux_dir="linux-$kv"
 alx_driver_path="drivers/net/ethernet/atheros/alx"
